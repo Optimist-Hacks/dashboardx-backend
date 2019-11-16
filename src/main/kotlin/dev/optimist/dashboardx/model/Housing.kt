@@ -7,5 +7,7 @@ import java.util.*
 data class Housing (
         val id: String = UUID.randomUUID().toString(),
         val name: String,
-        val dailyConsumptions: List<DailyConsumption>
+        val dailyConsumptions: List<DailyConsumption> = emptyList(),
+        val dailyEmotions: List<DailyEmotion> = emptyList()
+
 )
