@@ -10,7 +10,7 @@ import org.springframework.web.multipart.MultipartFile
 @RequestMapping("/face")
 class FaceController {
 
-    @PostMapping("/cameraPic")
+    @PostMapping
     fun cameraPic(
             @RequestBody
             file: MultipartFile
