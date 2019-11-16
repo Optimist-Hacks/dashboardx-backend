@@ -1,7 +1,7 @@
 package dev.optimist.dashboardx.dto
 
 data class Participant (
-        val name: String,
-        val place: Int,
+        val housingId: String,
+        val housingName: String,
         val co2Emission: Double
 )
