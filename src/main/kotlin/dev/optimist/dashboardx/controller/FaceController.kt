@@ -1,22 +1,27 @@
 package dev.optimist.dashboardx.controller
 
+import dev.optimist.dashboardx.service.FaceService
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
-import java.io.File
 
 @RestController
 @RequestMapping("/face")
-class FaceController {
+class FaceController (
+        @Autowired
+        private val faceService: FaceService
+) {
 
     @PostMapping
     fun cameraPic(
             @RequestBody
-            file: MultipartFile
+            file: MultipartFile,
+            housingId: String
     ): String {
-        File("/home/gera/IdeaProjects/dashboardx/src/main/resources/file.jpg").writeBytes(file.bytes)
-        return "Hello"
+        faceService.processCameraPic(housingId, file)
+        return "Success"
     }
 }
