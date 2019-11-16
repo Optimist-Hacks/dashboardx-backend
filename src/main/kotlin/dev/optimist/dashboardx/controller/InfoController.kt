@@ -1,6 +1,6 @@
 package dev.optimist.dashboardx.controller
 
-import dev.optimist.dashboardx.model.Info
+import dev.optimist.dashboardx.dto.Info
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
