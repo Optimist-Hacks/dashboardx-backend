@@ -44,6 +44,10 @@ class HousingService(
     }
 
     fun submitDailyValues(housingId: String, dailyConsumption: DailyConsumption) {
+        submitMultipleDailyValues(housingId, listOf(dailyConsumption))
+    }
+
+    fun submitMultipleDailyValues(housingId: String, dailyConsumption: List<DailyConsumption>) {
         val oldHousing = housingRepository
                 .findById(housingId)
                 .get()
@@ -51,7 +55,7 @@ class HousingService(
         val newConsumptions = oldHousing.dailyConsumptions
                 .toMutableList()
 
-        newConsumptions.add(dailyConsumption)
+        newConsumptions.addAll(dailyConsumption)
 
         housingRepository.save(
                 Housing(

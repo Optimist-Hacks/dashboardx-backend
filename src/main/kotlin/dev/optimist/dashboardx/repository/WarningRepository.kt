@@ -1,7 +1,8 @@
 package dev.optimist.dashboardx.repository
 
-import dev.optimist.dashboardx.model.Housing
+import dev.optimist.dashboardx.model.Warning
 import org.springframework.data.mongodb.repository.MongoRepository
 
-interface HousingRepository: MongoRepository<Housing, String> {
+interface WarningRepository: MongoRepository<Warning, String> {
+
 }

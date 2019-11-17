@@ -2,20 +2,27 @@ package dev.optimist.dashboardx.service
 
 import dev.optimist.dashboardx.api.EmissionCalculatorApi
 import dev.optimist.dashboardx.api.entity.Emotion
+import dev.optimist.dashboardx.api.entity.average
 import dev.optimist.dashboardx.dto.Info
 import dev.optimist.dashboardx.dto.Participant
-import dev.optimist.dashboardx.model.DailyEmotion
+import dev.optimist.dashboardx.dto.WarningDto
 import dev.optimist.dashboardx.model.Housing
+import dev.optimist.dashboardx.model.Warning
 import dev.optimist.dashboardx.repository.HousingRepository
+import dev.optimist.dashboardx.repository.WarningRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import java.time.Instant
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalUnit
 
 @Service
 class InfoService(
         @Autowired val housingRepository: HousingRepository,
         @Autowired val emissionCalculatorApi: EmissionCalculatorApi,
-        @Autowired val faceService: FaceService
+        @Autowired val faceService: FaceService,
+        @Autowired val warningRepository: WarningRepository
 ) {
 
     fun getInfo(housingId: String): Info {
@@ -29,12 +36,32 @@ class InfoService(
             Info()
         } else {
             Info(
-                    electricity = yesterdayHousingData.electricity,
-                    heating = yesterdayHousingData.heating,
-                    water = yesterdayHousingData.water,
-                    co2Emission = yesterdayHousingData.co2Emission,
+                    electricityDaily = yesterdayHousingData.electricity,
+                    heatingDaily = yesterdayHousingData.heating,
+                    waterDaily = yesterdayHousingData.water,
+                    co2EmissionDaily = calculateEmission(yesterdayHousingData.heating, yesterdayHousingData.electricity),
                     leaderboard = getLeaderboard(),
-                    emotion = housingData.dailyEmotions.firstOrNull { it.date == LocalDate.now() }?.emotion?:Emotion.fuckYura()
+                    emotionDaily = relevantEmotions(),
+                    warning = relevantWarning(housingId)
+            )
+        }
+    }
+
+    private fun relevantEmotions(): Emotion {
+        return faceService.getLastN(10).average()
+    }
+
+    private fun relevantWarning(housingId: String): WarningDto? {
+        val relevantTime = Instant.now().minus(1, ChronoUnit.HOURS)
+        val relevantWarning = warningRepository.findAll().filter { it.housingId == housingId && it.timestamp.isAfter(relevantTime) }.maxBy { it.timestamp }
+
+        return if(relevantWarning == null) {
+            null
+        } else {
+            WarningDto(
+                    housingId = relevantWarning.housingId,
+                    name = relevantWarning.name,
+                    description = relevantWarning.description
             )
         }
     }
@@ -50,9 +77,14 @@ class InfoService(
                     Participant(
                             housingId = housing.id,
                             housingName = housing.name,
-                            co2Emission = calculateTotalEmissionForCurrentMonth(housing)
+                            co2EmissionMonthly = calculateTotalEmissionForCurrentMonth(housing)
                     )
                 }
+    }
+
+    fun calculateEmission(heating: Double, electricity: Double): Double {
+        return emissionCalculatorApi.yearlyHeatingEmission(heating.toInt()) +
+                emissionCalculatorApi.yearlyElectricityEmission(electricity.toInt())
     }
 
     fun calculateTotalEmissionForCurrentMonth(housing: Housing): Double {
@@ -62,7 +94,6 @@ class InfoService(
         }
         val heating = currHousing.sumByDouble { it.heating }
         val electricity = currHousing.sumByDouble { it.electricity }
-        return emissionCalculatorApi.yearlyHeatingEmission(heating.toInt()) +
-        emissionCalculatorApi.yearlyElectricityEmission(electricity.toInt())
+        return calculateEmission(heating, electricity)
     }
 }

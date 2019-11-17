@@ -34,17 +34,19 @@ class EmissionCalculatorApi {
         if(response.body() == null) {
             logger.info(response.message())
         }
+        Thread.sleep(500)
         return response.body()?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, response.message())
     }
 
     fun yearlyElectricityEmission(elictricityConsumption: Int): Double {
-        logger.info("Making a call to heating emission API:\n consumption = $elictricityConsumption")
+        logger.info("Making a call to electricity emission API:\n consumption = $elictricityConsumption")
         val response = api.electricityEmission(
                 electricityConsumption = elictricityConsumption
         ).execute()
         if(response.body() == null) {
             logger.info(response.message())
         }
+        Thread.sleep(500)
         return response.body()?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, response.message())
     }
 

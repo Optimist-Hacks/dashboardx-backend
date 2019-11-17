@@ -5,7 +5,9 @@ import dev.optimist.dashboardx.api.entity.DetectFaceApiResponse
 import dev.optimist.dashboardx.api.entity.Emotion
 import dev.optimist.dashboardx.api.entity.average
 import dev.optimist.dashboardx.model.DailyEmotion
+import dev.optimist.dashboardx.model.Face
 import dev.optimist.dashboardx.model.Housing
+import dev.optimist.dashboardx.repository.FaceRepository
 import dev.optimist.dashboardx.repository.HousingRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,7 +20,7 @@ import java.util.*
 @Component
 class FaceService(
         @Autowired val faceApi: FaceApi,
-        @Autowired val housingRepository: HousingRepository
+        @Autowired val faceRepository: FaceRepository
 ) {
 
     private val logger = LoggerFactory.getLogger(FaceService::class.java)
@@ -42,27 +44,23 @@ class FaceService(
         val faces = detectFace(file)
         logger.info("Successfully detected ${faces.size} faces")
 
-        val oldHousingData = housingRepository.findById(housingId).get()
-
-        var todayEmotion = oldHousingData.dailyEmotions.lastOrNull()
-        val todayDate = LocalDate.now()
-
-        val emotions = faces.map {
+        val averageEmotion = faces.map {
             it.faceAttributes.emotion
-        }.toMutableList()
-        when {
-            todayEmotion == null -> todayEmotion = DailyEmotion(emotions.average(), todayDate, 1)
-            todayDate > todayEmotion.date -> todayEmotion = DailyEmotion(emotions.average(), todayDate, 1)
-            else -> todayEmotion = todayEmotion.calculateNewEmotion(emotions.average())
-        }
+        }.average()
 
-
-        val newDailyEmotions = oldHousingData.dailyEmotions.toMutableList()
-        newDailyEmotions.add(todayEmotion)
-        val newHousingData = Housing(oldHousingData.id, oldHousingData.name, oldHousingData.dailyConsumptions, newDailyEmotions)
-
-        housingRepository.save(newHousingData)
+        faceRepository.save(Face(emotion = averageEmotion))
 
         logger.info("Finish process camera pic")
+    }
+
+    fun saveFace(face: Face) {
+        faceRepository.save(face)
+    }
+
+    fun getLastN(n: Int): List<Emotion> {
+        val allEmotions = faceRepository.findAll()
+
+        allEmotions.sortByDescending { it.timestamp }
+        return allEmotions.take(n).map { it.emotion }
     }
 }
